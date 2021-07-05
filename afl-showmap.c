@@ -139,6 +139,7 @@ static void classify_counts(u8* mem, const u8* map) {
 static void remove_shm(void) {
 
   shmctl(shm_id, IPC_RMID, NULL);
+  unlink(SHM_ID_FILE); /* HACK: Ignore errors. */
 
 }
 
@@ -156,6 +157,12 @@ static void setup_shm(void) {
   atexit(remove_shm);
 
   shm_str = alloc_printf("%d", shm_id);
+
+  /* HACK: */
+  int fd = open(SHM_ID_FILE, O_CREAT | O_WRONLY | O_TRUNC, 0600);
+  if (fd < 0) PFATAL("Unable to create '%s'", SHM_ID_FILE);
+  ck_write(fd, shm_str, strlen(shm_str) + 1, SHM_ID_FILE);
+  close(fd);
 
   setenv(SHM_ENV_VAR, shm_str, 1);
 

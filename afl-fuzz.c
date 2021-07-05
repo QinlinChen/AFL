@@ -1230,6 +1230,7 @@ static inline void classify_counts(u32* mem) {
 static void remove_shm(void) {
 
   shmctl(shm_id, IPC_RMID, NULL);
+  unlink(SHM_ID_FILE); /* HACK: Ignore errors. */
 
 }
 
@@ -1390,7 +1391,17 @@ EXP_ST void setup_shm(void) {
      fork server commands. This should be replaced with better auto-detection
      later on, perhaps? */
 
-  if (!dumb_mode) setenv(SHM_ENV_VAR, shm_str, 1);
+  if (!dumb_mode) {
+
+    /* HACK: use SHM_ID_FILE to pass shm_id to the program being fuzzed. */
+    int fd = open(SHM_ID_FILE, O_CREAT | O_WRONLY | O_TRUNC, 0600);
+    if (fd < 0) PFATAL("Unable to create '%s'", SHM_ID_FILE);
+    ck_write(fd, shm_str, strlen(shm_str) + 1, SHM_ID_FILE);
+    close(fd);
+
+    setenv(SHM_ENV_VAR, shm_str, 1);
+
+  }
 
   ck_free(shm_str);
 

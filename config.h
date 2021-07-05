@@ -277,6 +277,7 @@
 /* Environment variable used to pass SHM ID to the called program. */
 
 #define SHM_ENV_VAR         "__AFL_SHM_ID"
+#define SHM_ID_FILE         "/tmp/__afl_shm_id"  /* HACK: use file to pass SHM ID */
 
 /* Other less interesting, internal-only variables. */
 

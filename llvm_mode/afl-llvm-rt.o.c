@@ -74,6 +74,16 @@ static void __afl_map_shm(void) {
 
   u8 *id_str = getenv(SHM_ENV_VAR);
 
+  /* HACK: if SHM_ENV_VAR doesn't exist, try the SHM_ID_FILE. */
+  u8 buf[16];
+  if (!id_str) {
+    FILE *fp = fopen(SHM_ID_FILE, "r");
+    if (!fp)
+      return;
+    id_str = fgets(buf, sizeof(buf), fp);
+    fclose(fp);
+  }
+
   /* If we're running under AFL, attach to the appropriate region, replacing the
      early-stage __afl_area_initial region that is needed to allow some really
      hacky .init code to work correctly in projects such as OpenSSL. */
@@ -239,13 +249,14 @@ int __afl_persistent_loop(unsigned int max_cnt) {
 
 void __afl_manual_init(void) {
 
-  static u8 init_done;
+  /* HACK: try at most twice. */
+  static int n_try = 0;
 
-  if (!init_done) {
+  if (n_try < 2) {
 
     __afl_map_shm();
     __afl_start_forkserver();
-    init_done = 1;
+    n_try++;
 
   }
 
