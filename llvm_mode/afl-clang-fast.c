@@ -231,6 +231,8 @@ static void edit_params(u32 argc, char** argv) {
   cc_params[cc_par_cnt++] = "-D__AFL_HAVE_MANUAL_CONTROL=1";
   cc_params[cc_par_cnt++] = "-D__AFL_COMPILER=1";
   cc_params[cc_par_cnt++] = "-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION=1";
+
+  cc_params[cc_par_cnt++] = "-D__AFL_SNAP2EXE=1";
   cc_params[cc_par_cnt++] = "-I" SNAP2EXE_PATH "/include";
 
   /* When the user tries to use persistent or deferred forkserver modes by
