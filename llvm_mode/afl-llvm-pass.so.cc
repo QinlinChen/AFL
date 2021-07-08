@@ -39,6 +39,7 @@
 #include <unistd.h>
 
 #include "llvm/ADT/Statistic.h"
+#include "llvm/ADT/StringSet.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
@@ -61,6 +62,19 @@ namespace {
       // StringRef getPassName() const override {
       //  return "American Fuzzy Lop Instrumentation";
       // }
+
+  };
+
+  class HookLib : public ModulePass {
+
+    public:
+
+      static char ID;
+      static StringSet<> funcsToReplace;
+
+      HookLib() : ModulePass(ID) { }
+
+      bool runOnModule(Module &M) override;
 
   };
 
@@ -177,10 +191,41 @@ bool AFLCoverage::runOnModule(Module &M) {
 }
 
 
+char HookLib::ID = 1;
+
+StringSet<> HookLib::funcsToReplace = {
+  "malloc","calloc","realloc","mmap",
+  "fstat","lstat","fstatat",
+  "creat","lseek","read","write","close",
+  "rename","renameat","link","linkat","unlink","unlinkat",
+  "truncate","ftruncate","remove","symlink","symlinkat",
+  "opendir","fdopendir","mkdir","mkdirat","rmdir",
+  "mkdtemp","mkstemp","mkfifo","mkfifoat",
+  "dup","dup2","pread","pwrite", "chdir","fchdir",
+  "chown","fchown","lchown","fchownat",
+  "chmod","fchmod","fchmodat",
+  "getgrnam","getgrgid","getpwnam","getpwuid"
+};
+
+bool HookLib::runOnModule(Module &M) {
+  for (auto &&F : M) {
+    if (F.isDeclaration()) {
+      StringRef fName = F.getName();
+      if (funcsToReplace.find(fName) != funcsToReplace.end()) {
+        outs() << "hook: " << fName << "\n";
+        F.setName("__hook_" + fName);
+      }
+    }
+  }
+  return true;
+}
+
+
 static void registerAFLPass(const PassManagerBuilder &,
                             legacy::PassManagerBase &PM) {
 
   PM.add(new AFLCoverage());
+  PM.add(new HookLib());
 
 }
 

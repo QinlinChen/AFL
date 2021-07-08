@@ -18,3 +18,9 @@ afl-llvm-pass.so
 afl-llvm-rt-32.o
 afl-llvm-rt-64.o
 afl-llvm-rt.o
+hook-llvm-rt-32.o
+hook-llvm-rt-64.o
+hook-llvm-rt.o
+llvm_mode/hook-llvm-rt.o.c
+
+.vscode

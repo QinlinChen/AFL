@@ -231,6 +231,7 @@ static void edit_params(u32 argc, char** argv) {
   cc_params[cc_par_cnt++] = "-D__AFL_HAVE_MANUAL_CONTROL=1";
   cc_params[cc_par_cnt++] = "-D__AFL_COMPILER=1";
   cc_params[cc_par_cnt++] = "-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION=1";
+  cc_params[cc_par_cnt++] = "-I" SNAP2EXE_PATH "/include";
 
   /* When the user tries to use persistent or deferred forkserver modes by
      appending a single line to the program, we want to reliably inject a
@@ -286,10 +287,12 @@ static void edit_params(u32 argc, char** argv) {
     switch (bit_mode) {
 
       case 0:
+        cc_params[cc_par_cnt++] = alloc_printf("%s/hook-llvm-rt.o", obj_path);
         cc_params[cc_par_cnt++] = alloc_printf("%s/afl-llvm-rt.o", obj_path);
         break;
 
       case 32:
+        cc_params[cc_par_cnt++] = alloc_printf("%s/hook-llvm-rt-32.o", obj_path);
         cc_params[cc_par_cnt++] = alloc_printf("%s/afl-llvm-rt-32.o", obj_path);
 
         if (access(cc_params[cc_par_cnt - 1], R_OK))
@@ -298,6 +301,7 @@ static void edit_params(u32 argc, char** argv) {
         break;
 
       case 64:
+        cc_params[cc_par_cnt++] = alloc_printf("%s/hook-llvm-rt-32.o", obj_path);
         cc_params[cc_par_cnt++] = alloc_printf("%s/afl-llvm-rt-64.o", obj_path);
 
         if (access(cc_params[cc_par_cnt - 1], R_OK))
@@ -306,6 +310,9 @@ static void edit_params(u32 argc, char** argv) {
         break;
 
     }
+    
+    cc_params[cc_par_cnt++] = alloc_printf(SNAP2EXE_PATH "/lib/libsnap2exe.a");
+
   }
 #endif
 

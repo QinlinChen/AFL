@@ -16,6 +16,8 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
 
+SNAP2EXE_PATH ?= $(HOME)/snap2exe
+
 PREFIX      ?= /usr/local
 HELPER_PATH  = $(PREFIX)/lib/afl
 BIN_PATH     = $(PREFIX)/bin
@@ -56,9 +58,11 @@ ifeq "$(origin CC)" "default"
 endif
 
 ifndef AFL_TRACE_PC
-  PROGS      = ../afl-clang-fast ../afl-llvm-pass.so ../afl-llvm-rt.o ../afl-llvm-rt-32.o ../afl-llvm-rt-64.o
+  PROGS      = ../afl-clang-fast ../afl-llvm-pass.so ../afl-llvm-rt.o ../afl-llvm-rt-32.o ../afl-llvm-rt-64.o \
+               ../hook-llvm-rt.o ../hook-llvm-rt-32.o ../hook-llvm-rt-64.o
 else
-  PROGS      = ../afl-clang-fast ../afl-llvm-rt.o ../afl-llvm-rt-32.o ../afl-llvm-rt-64.o
+  PROGS      = ../afl-clang-fast ../afl-llvm-rt.o ../afl-llvm-rt-32.o ../afl-llvm-rt-64.o \
+               ../hook-llvm-rt.o ../hook-llvm-rt-32.o ../hook-llvm-rt-64.o
 endif
 
 all: test_deps $(PROGS) test_build all_done
@@ -74,10 +78,12 @@ endif
 	@which $(CC) >/dev/null 2>&1 || ( echo "[-] Oops, can't find '$(CC)'. Make sure that it's in your \$$PATH (or set \$$CC and \$$CXX)."; exit 1 )
 	@echo "[*] Checking for '../afl-showmap'..."
 	@test -f ../afl-showmap || ( echo "[-] Oops, can't find '../afl-showmap'. Be sure to compile AFL first."; exit 1 )
+	@echo "[*] Checking for the existence of 'snap2exe' ..."
+	@test -d $(SNAP2EXE_PATH) || ( echo "[-] Oops, can't find 'snap2exe' at $(SNAP2EXE_PATH). Be sure to install snap2exe first."; exit 1 )
 	@echo "[+] All set and ready to build."
 
 ../afl-clang-fast: afl-clang-fast.c | test_deps
-	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
+	$(CC) $(CFLAGS) -DSNAP2EXE_PATH=\"$(SNAP2EXE_PATH)\" $< -o $@ $(LDFLAGS)
 	ln -sf afl-clang-fast ../afl-clang-fast++
 
 ../afl-llvm-pass.so: afl-llvm-pass.so.cc | test_deps
@@ -93,6 +99,24 @@ endif
 ../afl-llvm-rt-64.o: afl-llvm-rt.o.c | test_deps
 	@printf "[*] Building 64-bit variant of the runtime (-m64)... "
 	@$(CC) $(CFLAGS) -m64 -fPIC -c $< -o $@ 2>/dev/null; if [ "$$?" = "0" ]; then echo "success!"; else echo "failed (that's fine)"; fi
+
+hook-llvm-rt.o.c: hook-llvm-rt.o.c.tmpl hook-llvm-rt.data genhook.py
+	@echo [*] Generating $@...
+	@python3 genhook.py -d hook-llvm-rt.data -i $< -o $@
+
+../hook-llvm-rt.o: hook-llvm-rt.o.c
+	@echo [*] Building C lib hook...
+	@$(CC) $(CFLAGS) -I$(SNAP2EXE_PATH)/include -fPIC -c $< -o $@
+
+../hook-llvm-rt-32.o: hook-llvm-rt.o.c
+	@printf "[*] Building 32-bit variant of the C lib hook (-m32)... "
+	@$(CC) $(CFLAGS) -I$(SNAP2EXE_PATH)/include -m32 -fPIC -c $< -o $@ 2>/dev/null; \
+	if [ "$$?" = "0" ]; then echo "success!"; else echo "failed (that's fine)"; fi
+
+../hook-llvm-rt-64.o: hook-llvm-rt.o.c
+	@printf "[*] Building 64-bit variant of the C lib hook (-m64)... "
+	@$(CC) $(CFLAGS) -I$(SNAP2EXE_PATH)/include -m64 -fPIC -c $< -o $@ 2>/dev/null; \
+	if [ "$$?" = "0" ]; then echo "success!"; else echo "failed (that's fine)"; fi
 
 test_build: $(PROGS)
 	@echo "[*] Testing the CC wrapper and instrumentation output..."
@@ -112,4 +136,5 @@ all_done: test_build
 
 clean:
 	rm -f *.o *.so *~ a.out core core.[1-9][0-9]* test-instr .test-instr0 .test-instr1 
+	rm -f hook-llvm-rt.o.c
 	rm -f $(PROGS) ../afl-clang-fast++
