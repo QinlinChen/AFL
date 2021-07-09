@@ -103,7 +103,8 @@ static void find_obj(u8* argv0) {
 
 static void edit_params(u32 argc, char** argv) {
 
-  u8 fortify_set = 0, asan_set = 0, x_set = 0, bit_mode = 0, partial_linking = 0;
+  u8 fortify_set = 0, asan_set = 0, x_set = 0, bit_mode = 0,
+     preprocessor_only = 0, have_c = 0, partial_linking = 0;
   u8 *name;
 
   cc_params = ck_alloc((argc + 128) * sizeof(u8*));
@@ -148,11 +149,13 @@ static void edit_params(u32 argc, char** argv) {
     if (!strcmp(cur, "armv7a-linux-androideabi")) bit_mode = 32;
     if (!strcmp(cur, "-m64")) bit_mode = 64;
 
+    if (!strcmp(cur, "-x")) x_set = 1;
+    if (!strcmp(cur, "-E")) preprocessor_only = 1;
+    if (!strcmp(cur, "-c")) have_c = 1;
+
     if (!strcmp(cur, "-Wl,-r") ||
         !strcmp(cur, "-Wl,-i") ||
         !strcmp(cur, "-r")) partial_linking = 1;
-
-    if (!strcmp(cur, "-x")) x_set = 1;
 
     if (!strcmp(cur, "-fsanitize=address") ||
         !strcmp(cur, "-fsanitize=memory")) asan_set = 1;
@@ -284,8 +287,22 @@ static void edit_params(u32 argc, char** argv) {
     cc_params[cc_par_cnt++] = "none";
   }
 
+  if (preprocessor_only || have_c) {
+
+    /* In the preprocessor_only case (-E), we are not actually compiling at
+       all but requesting the compiler to output preprocessed sources only.
+       We must not add the runtime in this case because the compiler will
+       simply output its binary content back on stdout, breaking any build
+       systems that rely on a separate source preprocessing step. */
+    cc_params[cc_par_cnt] = NULL;
+    return;
+
+  }
+
 #ifndef __ANDROID__
+
   if (!partial_linking) {
+
     switch (bit_mode) {
 
       case 0:
@@ -316,6 +333,7 @@ static void edit_params(u32 argc, char** argv) {
     cc_params[cc_par_cnt++] = alloc_printf(SNAP2EXE_PATH "/lib/libsnap2exe.a");
 
   }
+
 #endif
 
   cc_params[cc_par_cnt] = NULL;
