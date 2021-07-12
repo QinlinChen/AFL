@@ -193,18 +193,22 @@ bool AFLCoverage::runOnModule(Module &M) {
 
 char HookLib::ID = 1;
 
+// StringSet<> HookLib::funcsToReplace = {
+//   "malloc","calloc","realloc","mmap",
+//   "fstat","lstat","fstatat",
+//   "creat","lseek","read","write","close",
+//   "rename","renameat","link","linkat","unlink","unlinkat",
+//   "truncate","ftruncate","remove","symlink","symlinkat",
+//   "opendir","fdopendir","mkdir","mkdirat","rmdir",
+//   "mkdtemp","mkstemp","mkfifo","mkfifoat",
+//   "dup","dup2","pread","pwrite", "chdir","fchdir",
+//   "chown","fchown","lchown","fchownat",
+//   "chmod","fchmod","fchmodat",
+//   "getgrnam","getgrgid","getpwnam","getpwuid"
+// };
+
 StringSet<> HookLib::funcsToReplace = {
-  "malloc","calloc","realloc","mmap",
-  "fstat","lstat","fstatat",
-  "creat","lseek","read","write","close",
-  "rename","renameat","link","linkat","unlink","unlinkat",
-  "truncate","ftruncate","remove","symlink","symlinkat",
-  "opendir","fdopendir","mkdir","mkdirat","rmdir",
-  "mkdtemp","mkstemp","mkfifo","mkfifoat",
-  "dup","dup2","pread","pwrite", "chdir","fchdir",
-  "chown","fchown","lchown","fchownat",
-  "chmod","fchmod","fchmodat",
-  "getgrnam","getgrgid","getpwnam","getpwuid"
+  "read", "pread"
 };
 
 bool HookLib::runOnModule(Module &M) {
