@@ -216,8 +216,8 @@ bool HookLib::runOnModule(Module &M) {
     if (F.isDeclaration()) {
       StringRef fName = F.getName();
       if (funcsToReplace.find(fName) != funcsToReplace.end()) {
-        outs() << "hook: " << fName << "\n";
         F.setName("__hook_" + fName);
+        OKF("Hook: %s.", fName.str().c_str());
       }
     }
   }
