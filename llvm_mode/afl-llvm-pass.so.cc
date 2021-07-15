@@ -193,22 +193,12 @@ bool AFLCoverage::runOnModule(Module &M) {
 
 char HookLib::ID = 1;
 
-// StringSet<> HookLib::funcsToReplace = {
-//   "malloc","calloc","realloc","mmap",
-//   "fstat","lstat","fstatat",
-//   "creat","lseek","read","write","close",
-//   "rename","renameat","link","linkat","unlink","unlinkat",
-//   "truncate","ftruncate","remove","symlink","symlinkat",
-//   "opendir","fdopendir","mkdir","mkdirat","rmdir",
-//   "mkdtemp","mkstemp","mkfifo","mkfifoat",
-//   "dup","dup2","pread","pwrite", "chdir","fchdir",
-//   "chown","fchown","lchown","fchownat",
-//   "chmod","fchmod","fchmodat",
-//   "getgrnam","getgrgid","getpwnam","getpwuid"
-// };
-
 StringSet<> HookLib::funcsToReplace = {
-  "read", "pread"
+  "read", "pread",
+  "getc", "getchar", "scanf", "getline",
+  "fgetc", "fgets", "fread", "fscanf"
+  "getc_unlocked", "getchar_unlocked",
+  "fgetc_unlocked", "fgets_unlocked", "fread_unlocked"
 };
 
 bool HookLib::runOnModule(Module &M) {
@@ -216,8 +206,8 @@ bool HookLib::runOnModule(Module &M) {
     if (F.isDeclaration()) {
       StringRef fName = F.getName();
       if (funcsToReplace.find(fName) != funcsToReplace.end()) {
-        F.setName("__hook_" + fName);
         OKF("Hook: %s.", fName.str().c_str());
+        F.setName("__hook_" + fName);
       }
     }
   }

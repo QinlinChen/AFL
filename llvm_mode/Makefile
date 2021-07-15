@@ -16,7 +16,7 @@
 #   http://www.apache.org/licenses/LICENSE-2.0
 #
 
-SNAP2EXE_PATH ?= $(HOME)/snap2exe
+SNAP2EXE_PATH ?= $(HOME)/local/snap2exe
 
 PREFIX      ?= /usr/local
 HELPER_PATH  = $(PREFIX)/lib/afl
