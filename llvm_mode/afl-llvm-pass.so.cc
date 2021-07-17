@@ -65,14 +65,14 @@ namespace {
 
   };
 
-  class HookLib : public ModulePass {
+  class LibHooks : public ModulePass {
 
     public:
 
       static char ID;
-      static StringSet<> funcsToReplace;
+      static StringSet<> funcsToHook;
 
-      HookLib() : ModulePass(ID) { }
+      LibHooks() : ModulePass(ID) { }
 
       bool runOnModule(Module &M) override;
 
@@ -191,21 +191,21 @@ bool AFLCoverage::runOnModule(Module &M) {
 }
 
 
-char HookLib::ID = 1;
+char LibHooks::ID = 1;
 
-StringSet<> HookLib::funcsToReplace = {
+StringSet<> LibHooks::funcsToHook = {
   "read", "pread",
   "getc", "getchar", "scanf", "getline",
-  "fgetc", "fgets", "fread", "fscanf"
+  "fgetc", "fgets", "fread", "fscanf",
   "getc_unlocked", "getchar_unlocked",
   "fgetc_unlocked", "fgets_unlocked", "fread_unlocked"
 };
 
-bool HookLib::runOnModule(Module &M) {
+bool LibHooks::runOnModule(Module &M) {
   for (auto &&F : M) {
     if (F.isDeclaration()) {
       StringRef fName = F.getName();
-      if (funcsToReplace.find(fName) != funcsToReplace.end()) {
+      if (funcsToHook.find(fName) != funcsToHook.end()) {
         OKF("Hook: %s.", fName.str().c_str());
         F.setName("__hook_" + fName);
       }
@@ -219,7 +219,7 @@ static void registerAFLPass(const PassManagerBuilder &,
                             legacy::PassManagerBase &PM) {
 
   PM.add(new AFLCoverage());
-  PM.add(new HookLib());
+  PM.add(new LibHooks());
 
 }
 

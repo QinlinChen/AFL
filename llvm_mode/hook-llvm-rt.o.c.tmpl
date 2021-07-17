@@ -21,7 +21,7 @@ extern void __afl_manual_init(void);
 
 int __hook_scanf(const char *format, ...)
 {
-  if (s2e_checkpoint(S2E_DEFAULT_SAVE_DIR, S2E_SCHED_PROB) == 1)
+  if (s2e_checkpoint(S2E_DEFAULT_SAVE_DIR, S2E_SCHED_THROTTLE) == 1)
     AFL_INIT();
 
   va_list ap;
@@ -34,7 +34,7 @@ int __hook_scanf(const char *format, ...)
 
 int __hook_fscanf(FILE *stream, const char *format, ...)
 {
-  if (s2e_checkpoint(S2E_DEFAULT_SAVE_DIR, S2E_SCHED_PROB) == 1)
+  if (s2e_checkpoint(S2E_DEFAULT_SAVE_DIR, S2E_SCHED_THROTTLE) == 1)
     AFL_INIT();
 
   va_list ap;
@@ -48,7 +48,7 @@ int __hook_fscanf(FILE *stream, const char *format, ...)
 {% for func_info in func_infos %}
 {{ func_info.ret_type }} __hook_{{ func_info.name }}({{ func_info.params_str() }})
 {
-  if (s2e_checkpoint(S2E_DEFAULT_SAVE_DIR, S2E_SCHED_PROB) == 1)
+  if (s2e_checkpoint(S2E_DEFAULT_SAVE_DIR, S2E_SCHED_THROTTLE) == 1)
     AFL_INIT();
 
   return {{ func_info.name }}({{ func_info.args_str() }});
