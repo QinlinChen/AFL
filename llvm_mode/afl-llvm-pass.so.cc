@@ -208,6 +208,10 @@ bool LibHooks::runOnModule(Module &M) {
       if (funcsToHook.find(fName) != funcsToHook.end()) {
         OKF("Hook: %s.", fName.str().c_str());
         F.setName("__hook_" + fName);
+      } else if (fName == "_IO_getc") {
+        /* getc() could be inlined as _IO_getc() in glibc. We hack it. */
+        OKF("Hack & Hook: _IO_getc -> getc.");
+        F.setName("__hook_getc");
       }
     }
   }
